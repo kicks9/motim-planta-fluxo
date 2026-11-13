@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motim — Planta &amp; Fluxo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topo">
+    <h1>Motim <span>— Planta &amp; Fluxo</span></h1>
+    <p class="subtitulo">Protótipo interno: gera a planta da feira a partir dos dados de inscrição e sinaliza risco de aglomeração por corredor — não é a interface do visitante.</p>
+  </header>
+
+  <details class="premissas">
+    <summary>Premissas do modelo (teste de carga 200/230)</summary>
+    <ul>
+      <li><strong>Taxa de demanda de tomada (25%):</strong> proporção de expositores que marcam "preciso de tomada" na inscrição — usada tanto pra gerar os dados de teste quanto pra calibrar quantos pontos de energia cada corredor recebe. É uma estimativa; o ideal é substituir pelo percentual real assim que houver dado de inscrição.</li>
+      <li><strong>Estoque de extensões:</strong> extensões que a organização leva no dia (2 no exemplo pequeno; ≈4% do total de expositores nos testes de carga, mín. 2). Cobre o desbalanceamento natural da alocação — corredores que enchem primeiro por causa das regras de acessibilidade/som acabam recebendo mais pedidos de tomada do que os pontos fixos aguentam — sem precisar de ponto de energia novo. Só vira pendência de verdade se esse estoque também acabar.</li>
+      <li><strong>Risco de fluxo (densidade real, não mais heurística relativa):</strong> estimamos quantas pessoas ficam em cada corredor no pico (visitantes/dia do perfil × 15% de concorrência simultânea × fatia de popularidade do corredor) e dividimos pela área real do corredor (largura por classe — largo 4m, médio 2,5m, estreito 1,5m — vezes nº de mesas × 1,5m de frente cada). O resultado em pessoas/m² é classificado pelo <strong>Level of Service de pedestres de Fruin</strong> (padrão usado em planejamento de circulação de eventos): até 1,0 p/m² = baixo; 1,0–2,0 = médio; acima de 2,0 = alto (ponto onde começa contato físico frequente). A distribuição por popularidade ainda é uma simplificação, mas o limite agora é um valor absoluto da literatura, não só uma comparação entre corredores do mesmo evento.</li>
+      <li><strong>Visitantes/dia:</strong> estimativa por perfil de local, editável no campo "Visitantes esperados/dia" — os valores de Galeria dos Estados (10 mil) e Museu Nacional (7 mil) vêm da pesquisa exploratória; os demais são estimativas a confirmar.</li>
+    </ul>
+  </details>
+
+  <main>
+    <section class="controles">
+      <label class="campo-qtd">
+        Perfil do local
+        <select id="perfil-local"></select>
+      </label>
+      <label class="campo-qtd">
+        Quantidade de expositores
+        <input type="number" id="qtd-expositores" min="1" value="30" />
+      </label>
+      <label class="campo-qtd">
+        Visitantes esperados/dia
+        <input type="number" id="qtd-visitantes" min="0" value="150" />
+      </label>
+      <button id="gerar" class="botao-principal">Gerar alocação</button>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-risco" checked />
+        Mostrar risco de fluxo por corredor
+      </label>
+    </section>
+
+    <p id="perfil-info" class="perfil-info"></p>
+
+    <section id="form-novo-local" class="form-novo-local" hidden>
+      <h3>Cadastrar novo local</h3>
+      <p class="form-novo-local-desc">Registre os corredores reais do espaço desta edição. Fica salvo só neste navegador.</p>
+      <label class="campo-nome-local">
+        Nome do local
+        <input type="text" id="novo-local-nome" placeholder="ex: Sesc Cultural 511/512 Norte" />
+      </label>
+      <label class="campo-nome-local">
+        Visitantes esperados/dia
+        <input type="number" id="novo-local-visitantes" min="1" value="1000" />
+      </label>
+      <div id="corredores-rows" class="corredores-rows"></div>
+      <div class="form-novo-local-acoes">
+        <button id="add-corredor" type="button" class="botao-secundario">+ Adicionar corredor</button>
+        <button id="salvar-perfil" type="button" class="botao-principal">Salvar perfil</button>
+        <button id="cancelar-novo-local" type="button" class="botao-secundario">Cancelar</button>
+      </div>
+    </section>
+
+    <div class="legenda">
+      <span><span class="mesa-tag mesa-tag--acessibilidade">PCD</span> acessibilidade</span>
+      <span><span class="mesa-tag mesa-tag--som">SOM</span> sensível a som</span>
+      <span><span class="mesa-tag mesa-tag--tomada">ENERG</span> precisa de tomada</span>
+      <span><span class="mesa-tag mesa-tag--novato">NOVO</span> novato</span>
+    </div>
+    <p id="resumo" class="resumo"></p>
+
+    <section id="mapa" class="mapa"></section>
+
+    <section class="pendencias">
+      <h2>Pendências físicas</h2>
+      <p class="pendencias-desc">O que a alocação não conseguiu resolver sozinha — vira lista de providência pra organização antes do dia da feira.</p>
+      <ul id="pendencias-lista"></ul>
+    </section>
+
+    <section class="sinalizacao">
+      <div class="sinalizacao-header">
+        <div>
+          <h2>Sinalização necessária <span id="sinalizacao-contagem" class="sinalizacao-contagem"></span></h2>
+          <p class="sinalizacao-desc">O quê produzir e onde colocar — derivado do perfil do local e do risco de fluxo. É a lista de providência pra quem vai fazer as placas, não o design final delas.</p>
+        </div>
+        <button id="imprimir-sinalizacao" type="button" class="botao-secundario no-print">Imprimir lista</button>
+      </div>
+      <ul id="sinalizacao-lista" class="sinalizacao-lista"></ul>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+  <script src="render.js"></script>
+</body>
+</html>
