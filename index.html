@@ -21,6 +21,7 @@
       <li><strong>Estoque de extensões:</strong> extensões que a organização leva no dia (2 no exemplo pequeno; ≈4% do total de expositores nos testes de carga, mín. 2). Cobre o desbalanceamento natural da alocação — corredores que enchem primeiro por causa das regras de acessibilidade/som acabam recebendo mais pedidos de tomada do que os pontos fixos aguentam — sem precisar de ponto de energia novo. Só vira pendência de verdade se esse estoque também acabar.</li>
       <li><strong>Risco de fluxo (densidade real, não mais heurística relativa):</strong> estimamos quantas pessoas ficam em cada corredor no pico (visitantes/dia do perfil × 15% de concorrência simultânea × fatia de popularidade do corredor) e dividimos pela área real do corredor (largura por classe — largo 4m, médio 2,5m, estreito 1,5m — vezes nº de mesas × 1,5m de frente cada). O resultado em pessoas/m² é classificado pelo <strong>Level of Service de pedestres de Fruin</strong> (padrão usado em planejamento de circulação de eventos): até 1,0 p/m² = baixo; 1,0–2,0 = médio; acima de 2,0 = alto (ponto onde começa contato físico frequente). A distribuição por popularidade ainda é uma simplificação, mas o limite agora é um valor absoluto da literatura, não só uma comparação entre corredores do mesmo evento.</li>
       <li><strong>Visitantes/dia:</strong> estimativa por perfil de local, editável no campo "Visitantes esperados/dia" — os valores de Galeria dos Estados (10 mil) e Museu Nacional (7 mil) vêm da pesquisa exploratória; os demais são estimativas a confirmar.</li>
+      <li><strong>Zona (setor):</strong> um local real não é só uma lista de corredores — é dividido em setores físicos (ex: "Pátio Externo", "Galpão 2"), e cada setor pode ter vários corredores de passagem dentro dele. Área (m²), nº de banheiros e se é coberta ou descoberta são informação do setor como um todo, não de um corredor específico. Quando a área real do setor é preenchida, ela substitui a estimativa por largura de corredor no cálculo de risco de fluxo; quando não é, o campo aparece como "a confirmar" e o cálculo usa a estimativa de antes. Banheiros e cobertura entram direto na lista de sinalização (categorias "Infraestrutura" e "Clima/cobertura").</li>
     </ul>
   </details>
 
@@ -58,9 +59,9 @@
         Visitantes esperados/dia
         <input type="number" id="novo-local-visitantes" min="1" value="1000" />
       </label>
-      <div id="corredores-rows" class="corredores-rows"></div>
+      <div id="setores-container" class="setores-container"></div>
       <div class="form-novo-local-acoes">
-        <button id="add-corredor" type="button" class="botao-secundario">+ Adicionar corredor</button>
+        <button id="add-setor" type="button" class="botao-secundario">+ Adicionar setor</button>
         <button id="salvar-perfil" type="button" class="botao-principal">Salvar perfil</button>
         <button id="cancelar-novo-local" type="button" class="botao-secundario">Cancelar</button>
       </div>

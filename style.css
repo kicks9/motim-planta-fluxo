@@ -183,11 +183,70 @@ main {
   border: 2px solid var(--azul);
 }
 
-.corredores-rows {
+.setores-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.setor-block {
+  background: #fff;
+  border: 2px solid var(--azul);
+  border-radius: 10px;
+  padding: 12px;
+}
+.setor-campos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.setor-campos label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.setor-nome {
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 2px solid var(--azul);
+  flex: 1 1 220px;
+}
+.setor-area,
+.setor-banheiros {
+  width: 90px;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid #c9c2b2;
+}
+.setor-remover {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--laranja);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+.setor-corredores {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 14px;
+  margin: 8px 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--creme);
+}
+.setor-add-corredor {
+  font-size: 12px;
+  padding: 6px 12px;
 }
 .corredor-row {
   display: flex;
@@ -291,6 +350,8 @@ main {
 .sinalizacao-item--som { border-left-color: var(--amarelo-medio); }
 .sinalizacao-item--fluxo { border-left-color: var(--vermelho-alto); }
 .sinalizacao-item--mapa-geral { border-left-color: var(--laranja); }
+.sinalizacao-item--infraestrutura { border-left-color: var(--azul); }
+.sinalizacao-item--clima { border-left-color: #9b4a08; }
 
 .sinalizacao-tipo {
   font-weight: 700;
@@ -342,8 +403,23 @@ main {
 .mapa {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 28px;
   margin-bottom: 32px;
+}
+
+.zona {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.zona-header {
+  font-size: 14px;
+  padding-bottom: 6px;
+  border-bottom: 2px dashed #c9c2b2;
+}
+.zona-meta {
+  font-weight: 400;
+  opacity: 0.75;
 }
 
 .corredor {

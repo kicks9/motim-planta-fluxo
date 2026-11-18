@@ -53,36 +53,71 @@ function tagEl(kind, label) {
   return span;
 }
 
+// Agrupa a lista flat de corredores (cada um já carregando os metadados da sua zona,
+// anexados pelo allocate()) de volta por zona, preservando a ordem de primeira aparição.
+function groupByZone(corridors) {
+  const order = [];
+  const byZone = new Map();
+  corridors.forEach((c) => {
+    if (!byZone.has(c.zoneId)) {
+      byZone.set(c.zoneId, { label: c.zoneLabel, bathrooms: c.zoneBathrooms, covered: c.zoneCovered, areaM2: c.zoneTotalAreaM2, corridors: [] });
+      order.push(c.zoneId);
+    }
+    byZone.get(c.zoneId).corridors.push(c);
+  });
+  return order.map((id) => byZone.get(id));
+}
+
+function zoneMetaLine(zone) {
+  const parts = [];
+  parts.push(zone.areaM2 != null ? `~${Math.round(zone.areaM2)} m²` : "área: a confirmar");
+  parts.push(zone.bathrooms != null ? `${zone.bathrooms} banheiro${zone.bathrooms === 1 ? "" : "s"}` : "banheiros: a confirmar");
+  parts.push(zone.covered === true ? "coberta" : zone.covered === false ? "descoberta" : "cobertura: a confirmar");
+  return parts.join(" · ");
+}
+
 function renderMap(corridors, flowRisk, showRisk) {
   const container = document.getElementById("mapa");
   container.innerHTML = "";
 
-  corridors.forEach((corridor) => {
-    const row = document.createElement("div");
-    row.className = "corredor";
-    if (showRisk) row.classList.add("risco-" + flowRisk[corridor.id].level);
+  groupByZone(corridors).forEach((zone) => {
+    const zoneWrap = document.createElement("div");
+    zoneWrap.className = "zona";
 
-    const header = document.createElement("div");
-    header.className = "corredor-header";
-    const risk = flowRisk[corridor.id];
-    const riskLabel = showRisk
-      ? ` · risco de fluxo: <strong>${risk.level}</strong> (${risk.density.toFixed(1)} pessoas/m², ~${Math.round(risk.occupancyEstimate)} pessoas no pico)`
-      : "";
-    header.innerHTML = `<strong>${corridor.label}</strong> <span class="corredor-meta">(${corridor.width}, ${corridor.assigned.length}/${corridor.slots} mesas)${riskLabel}</span>`;
-    row.appendChild(header);
+    const zoneHeader = document.createElement("div");
+    zoneHeader.className = "zona-header";
+    zoneHeader.innerHTML = `<strong>Zona: ${zone.label}</strong> <span class="zona-meta">(${zoneMetaLine(zone)})</span>`;
+    zoneWrap.appendChild(zoneHeader);
 
-    const trail = document.createElement("div");
-    trail.className = "mesas-trilha";
-    corridor.assigned.forEach((e) => trail.appendChild(tableNode(e, corridor)));
-    // slots vazios, se sobrar
-    for (let i = corridor.assigned.length; i < corridor.slots; i++) {
-      const empty = document.createElement("div");
-      empty.className = "mesa mesa-vazia";
-      empty.textContent = "vago";
-      trail.appendChild(empty);
-    }
-    row.appendChild(trail);
-    container.appendChild(row);
+    zone.corridors.forEach((corridor) => {
+      const row = document.createElement("div");
+      row.className = "corredor";
+      if (showRisk) row.classList.add("risco-" + flowRisk[corridor.id].level);
+
+      const header = document.createElement("div");
+      header.className = "corredor-header";
+      const risk = flowRisk[corridor.id];
+      const riskLabel = showRisk
+        ? ` · risco de fluxo: <strong>${risk.level}</strong> (${risk.density.toFixed(1)} pessoas/m², ~${Math.round(risk.occupancyEstimate)} pessoas no pico)`
+        : "";
+      header.innerHTML = `<strong>${corridor.label}</strong> <span class="corredor-meta">(${corridor.width}, ${corridor.assigned.length}/${corridor.slots} mesas)${riskLabel}</span>`;
+      row.appendChild(header);
+
+      const trail = document.createElement("div");
+      trail.className = "mesas-trilha";
+      corridor.assigned.forEach((e) => trail.appendChild(tableNode(e, corridor)));
+      // slots vazios, se sobrar
+      for (let i = corridor.assigned.length; i < corridor.slots; i++) {
+        const empty = document.createElement("div");
+        empty.className = "mesa mesa-vazia";
+        empty.textContent = "vago";
+        trail.appendChild(empty);
+      }
+      row.appendChild(trail);
+      zoneWrap.appendChild(row);
+    });
+
+    container.appendChild(zoneWrap);
   });
 }
 
@@ -108,8 +143,9 @@ function renderPending(pendingRaw) {
 function renderResumo(n, corridors, elapsedMs, extensionsUsed, extensionBudget) {
   const resumo = document.getElementById("resumo");
   const totalSlots = corridors.reduce((acc, c) => acc + c.slots, 0);
+  const zoneCount = new Set(corridors.map((c) => c.zoneId)).size;
   const extInfo = extensionBudget ? ` · ${extensionsUsed}/${extensionBudget} extensões de estoque usadas` : "";
-  resumo.textContent = `${n} expositores · ${corridors.length} corredores · ${totalSlots} mesas disponíveis · gerado em ${elapsedMs.toFixed(1)}ms${extInfo}`;
+  resumo.textContent = `${n} expositores · ${zoneCount} zona${zoneCount === 1 ? "" : "s"} · ${corridors.length} corredores · ${totalSlots} mesas disponíveis · gerado em ${elapsedMs.toFixed(1)}ms${extInfo}`;
 }
 
 const SIGNAGE_LABEL = {
@@ -118,6 +154,8 @@ const SIGNAGE_LABEL = {
   acessibilidade: "Rota acessível",
   som: "Zona de som",
   fluxo: "Risco de fluxo",
+  infraestrutura: "Infraestrutura (banheiro)",
+  clima: "Clima/cobertura",
 };
 
 function renderSignage(signs) {
@@ -157,7 +195,7 @@ function saveCustomProfile(profile) {
 }
 
 function profileCapacity(profile) {
-  return profile.corridors.reduce((acc, c) => acc + c.slots, 0);
+  return profile.zones.reduce((acc, z) => acc + z.corridors.reduce((a, c) => a + c.slots, 0), 0);
 }
 
 function populatePerfilSelect(selectedId) {
@@ -188,8 +226,9 @@ function renderPerfilInfo(profile) {
 }
 
 // ---------- Formulário "+ Cadastrar novo local" ----------
-function addCorredorRow(prefill) {
-  const container = document.getElementById("corredores-rows");
+// Um setor (zona física) pode ter vários corredores dentro dele — por isso os corredores
+// são renderizados aninhados dentro do bloco do próprio setor, não numa lista só pro local.
+function addCorredorRow(container, prefill) {
   const row = document.createElement("div");
   row.className = "corredor-row";
   row.innerHTML = `
@@ -208,21 +247,49 @@ function addCorredorRow(prefill) {
   container.appendChild(row);
 }
 
+function addSetorBlock(prefill) {
+  const container = document.getElementById("setores-container");
+  const block = document.createElement("div");
+  block.className = "setor-block";
+  block.innerHTML = `
+    <div class="setor-campos">
+      <input type="text" class="setor-nome" placeholder="Nome do setor (ex: Pátio Externo)" value="${prefill?.label ?? ""}" />
+      <label>Área do setor (m²) <input type="number" class="setor-area" min="0" placeholder="opcional" /></label>
+      <label>Banheiros no setor <input type="number" class="setor-banheiros" min="0" placeholder="opcional" /></label>
+      <label><input type="checkbox" class="setor-coberto" /> área coberta</label>
+      <button type="button" class="setor-remover" title="Remover setor">✕</button>
+    </div>
+    <div class="setor-corredores"></div>
+    <button type="button" class="botao-secundario setor-add-corredor">+ Adicionar corredor neste setor</button>
+  `;
+  const corredoresWrap = block.querySelector(".setor-corredores");
+  block.querySelector(".setor-add-corredor").addEventListener("click", () => addCorredorRow(corredoresWrap));
+  block.querySelector(".setor-remover").addEventListener("click", () => block.remove());
+  container.appendChild(block);
+
+  const rows = prefill?.rows ?? [{ width: "largo", slots: 20, accessibleBathroomNearby: true }, { width: "médio", slots: 20 }, { width: "estreito", slots: 20, soundZoneNear: true }];
+  rows.forEach((row) => addCorredorRow(corredoresWrap, row));
+}
+
 function resetNovoLocalForm() {
   document.getElementById("novo-local-nome").value = "";
   document.getElementById("novo-local-visitantes").value = 1000;
-  document.getElementById("corredores-rows").innerHTML = "";
-  addCorredorRow({ width: "largo", slots: 20, accessibleBathroomNearby: true });
-  addCorredorRow({ width: "médio", slots: 20 });
-  addCorredorRow({ width: "estreito", slots: 20, soundZoneNear: true });
+  document.getElementById("setores-container").innerHTML = "";
+  addSetorBlock({ label: "Setor 1" });
 }
 
-function readCorredorRows() {
-  return Array.from(document.querySelectorAll("#corredores-rows .corredor-row")).map((row) => ({
-    width: row.querySelector(".row-width").value,
-    slots: Math.max(1, parseInt(row.querySelector(".row-slots").value, 10) || 1),
-    accessibleBathroomNearby: row.querySelector(".row-bathroom").checked,
-    soundZoneNear: row.querySelector(".row-sound").checked,
+function readSetores() {
+  return Array.from(document.querySelectorAll("#setores-container .setor-block")).map((block) => ({
+    label: block.querySelector(".setor-nome").value.trim(),
+    areaM2: block.querySelector(".setor-area").value !== "" ? parseFloat(block.querySelector(".setor-area").value) : null,
+    bathrooms: block.querySelector(".setor-banheiros").value !== "" ? parseInt(block.querySelector(".setor-banheiros").value, 10) : null,
+    covered: block.querySelector(".setor-coberto").checked,
+    rows: Array.from(block.querySelectorAll(".corredor-row")).map((row) => ({
+      width: row.querySelector(".row-width").value,
+      slots: Math.max(1, parseInt(row.querySelector(".row-slots").value, 10) || 1),
+      accessibleBathroomNearby: row.querySelector(".row-bathroom").checked,
+      soundZoneNear: row.querySelector(".row-sound").checked,
+    })),
   }));
 }
 
@@ -242,7 +309,7 @@ function currentDataset() {
     n = capacity;
   }
   const dailyVisitors = parseInt(document.getElementById("qtd-visitantes").value, 10) || profile.dailyVisitors || 0;
-  return { exhibitors: generateExhibitors(n), venue: { corridors: profile.corridors, extensionBudget: profile.extensionBudget }, profile, overflow, capacity, dailyVisitors };
+  return { exhibitors: generateExhibitors(n), venue: { zones: profile.zones, extensionBudget: profile.extensionBudget }, profile, overflow, capacity, dailyVisitors };
 }
 
 function runAndRender() {
@@ -286,7 +353,7 @@ window.addEventListener("DOMContentLoaded", () => {
     runAndRender();
   });
 
-  document.getElementById("add-corredor").addEventListener("click", () => addCorredorRow());
+  document.getElementById("add-setor").addEventListener("click", () => addSetorBlock());
 
   document.getElementById("cancelar-novo-local").addEventListener("click", () => {
     toggleNovoLocalForm(false);
@@ -295,13 +362,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("salvar-perfil").addEventListener("click", () => {
     const nome = document.getElementById("novo-local-nome").value.trim();
-    const rows = readCorredorRows();
-    if (!rows.length) {
-      alert("Adicione pelo menos um corredor antes de salvar.");
+    const zonesInput = readSetores().filter((z) => z.rows.length);
+    if (!zonesInput.length) {
+      alert("Adicione pelo menos um corredor em algum setor antes de salvar.");
       return;
     }
     const dailyVisitors = Math.max(1, parseInt(document.getElementById("novo-local-visitantes").value, 10) || 1000);
-    const profile = buildProfileFromRows(nome, rows, dailyVisitors);
+    const profile = buildProfileFromRows(nome, zonesInput, dailyVisitors);
     profiles.push(profile);
     saveCustomProfile(profile);
     toggleNovoLocalForm(false);

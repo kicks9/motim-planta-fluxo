@@ -7,6 +7,12 @@
 // descreve um espaço real (ou provisório) que a organização pode escolher antes de gerar
 // a alocação. "verified: true" = baseado em dado concreto; "false" = esqueleto provisório,
 // a ser ajustado por quem conhece o local de verdade antes de usar pra valer.
+//
+// Um local é dividido em zonas (setores físicos — ex: "Pátio Externo", "Galpão 2"), e cada
+// zona pode ter vários corredores de passagem dentro dela. A zona carrega os dados que só
+// fazem sentido no nível do setor como um todo: área aproximada (m²), quantos banheiros tem
+// ali, e se é uma área coberta ou exposta ao tempo — nenhum desses é propriedade de "um
+// corredor", são do espaço físico que os corredores dividem entre si.
 
 // Espalha N pontos de energia ao longo de `slots` posições (só define a capacidade, não a
 // posição física exata — a planta real decide isso).
@@ -16,8 +22,8 @@ function computePowerPoints(slots, rate = 0.25) {
 }
 
 // Gera um esqueleto de corredores repetindo o padrão largo/médio/estreito — usado como ponto
-// de partida provisório (perfis não verificados) ou pelo botão "gerar esqueleto" do formulário
-// de novo local; nunca deve ser tratado como mapa real sem revisão.
+// de partida provisório (perfis não verificados) ou pelo formulário de novo local; nunca deve
+// ser tratado como mapa real sem revisão.
 function makeArchetypeCorridors(numCorridors, slotsPerCorridor) {
   const archetypes = [
     { width: "largo", widthFactor: 3, accessibleBathroomNearby: true, soundZoneNear: false },
@@ -48,23 +54,41 @@ const VENUE_PROFILES = [
     note: "Local fictício, só pra demonstração rápida com poucos expositores.",
     extensionBudget: 2,
     dailyVisitors: 150,
-    corridors: [
-      { id: "A", label: "Corredor A", width: "largo", widthFactor: 3, slots: 10, powerPoints: [2, 7], accessibleBathroomNearby: true, soundZoneNear: false },
-      { id: "B", label: "Corredor B", width: "médio", widthFactor: 2, slots: 10, powerPoints: [4], accessibleBathroomNearby: false, soundZoneNear: false },
-      { id: "C", label: "Corredor C", width: "estreito", widthFactor: 1, slots: 10, powerPoints: [1, 5], accessibleBathroomNearby: false, soundZoneNear: true },
+    zones: [
+      {
+        id: "Z1",
+        label: "Setor único",
+        areaM2: 120,
+        bathrooms: 2,
+        covered: true,
+        corridors: [
+          { id: "A", label: "Corredor A", width: "largo", widthFactor: 3, slots: 10, powerPoints: [2, 7], accessibleBathroomNearby: true, soundZoneNear: false },
+          { id: "B", label: "Corredor B", width: "médio", widthFactor: 2, slots: 10, powerPoints: [4], accessibleBathroomNearby: false, soundZoneNear: false },
+          { id: "C", label: "Corredor C", width: "estreito", widthFactor: 1, slots: 10, powerPoints: [1, 5], accessibleBathroomNearby: false, soundZoneNear: true },
+        ],
+      },
     ],
   },
   {
     id: "conic-n22",
     name: "Conic — SDS Conic (edição N22)",
     verified: true,
-    note: "Baseado na lista pública de expositores da N22 (motim.art/expositores-n22): 3 corredores (A/B/C), entrada Sul e Norte. A contagem de mesas é aproximada — a numeração real tem lacunas e subdivisões (ex: A103.1/A103.2) — e a posição do banheiro acessível/zona de som não está confirmada, ajuste se souber o real. Visitantes/dia: estimativa (N22 é o formato reduzido 'Montim', menor que as grandes edições de +10 mil/dia) — ajuste se souber o real.",
+    note: "Baseado na lista pública de expositores da N22 (motim.art/expositores-n22): 3 corredores (A/B/C), entrada Sul e Norte. A contagem de mesas é aproximada — a numeração real tem lacunas e subdivisões (ex: A103.1/A103.2) — e a posição do banheiro acessível/zona de som não está confirmada, ajuste se souber o real. Visitantes/dia: estimativa (N22 é o formato reduzido 'Montim', menor que as grandes edições de +10 mil/dia) — ajuste se souber o real. Área do setor, nº de banheiros e cobertura ainda não foram confirmados com o local — por isso ficam em branco até alguém da organização preencher.",
     extensionBudget: 10,
     dailyVisitors: 3000,
-    corridors: [
-      { id: "A", label: "Corredor A", width: "largo", widthFactor: 3, slots: 113, powerPoints: computePowerPoints(113), accessibleBathroomNearby: true, soundZoneNear: false },
-      { id: "B", label: "Corredor B", width: "médio", widthFactor: 2, slots: 52, powerPoints: computePowerPoints(52), accessibleBathroomNearby: false, soundZoneNear: false },
-      { id: "C", label: "Corredor C", width: "estreito", widthFactor: 1, slots: 52, powerPoints: computePowerPoints(52), accessibleBathroomNearby: false, soundZoneNear: true },
+    zones: [
+      {
+        id: "Z1",
+        label: "Área principal (Sul/Norte ainda não diferenciado)",
+        areaM2: null,
+        bathrooms: null,
+        covered: null,
+        corridors: [
+          { id: "A", label: "Corredor A", width: "largo", widthFactor: 3, slots: 113, powerPoints: computePowerPoints(113), accessibleBathroomNearby: true, soundZoneNear: false },
+          { id: "B", label: "Corredor B", width: "médio", widthFactor: 2, slots: 52, powerPoints: computePowerPoints(52), accessibleBathroomNearby: false, soundZoneNear: false },
+          { id: "C", label: "Corredor C", width: "estreito", widthFactor: 1, slots: 52, powerPoints: computePowerPoints(52), accessibleBathroomNearby: false, soundZoneNear: true },
+        ],
+      },
     ],
   },
   {
@@ -74,7 +98,7 @@ const VENUE_PROFILES = [
     note: "Local mais recorrente da Motim nas edições grandes (+325 expositores), mas ainda sem mapeamento detalhado de corredores — esqueleto gerado automaticamente. Substitua pelos corredores reais antes de usar pra decisão de verdade. Visitantes/dia: 10 mil, direto da pesquisa exploratória (edições grandes).",
     extensionBudget: 10,
     dailyVisitors: 10000,
-    corridors: makeArchetypeCorridors(5, 24),
+    zones: [{ id: "Z1", label: "Área única (provisória)", areaM2: null, bathrooms: null, covered: null, corridors: makeArchetypeCorridors(5, 24) }],
   },
   {
     id: "museu-nacional",
@@ -83,7 +107,7 @@ const VENUE_PROFILES = [
     note: "Edição recorde de público (+14 mil em 2 dias ≈ 7 mil/dia), sem mapeamento detalhado ainda — esqueleto provisório.",
     extensionBudget: 8,
     dailyVisitors: 7000,
-    corridors: makeArchetypeCorridors(4, 24),
+    zones: [{ id: "Z1", label: "Área única (provisória)", areaM2: null, bathrooms: null, covered: null, corridors: makeArchetypeCorridors(4, 24) }],
   },
   {
     id: "ccbb",
@@ -92,9 +116,29 @@ const VENUE_PROFILES = [
     note: "Sem mapeamento detalhado ainda — esqueleto provisório. Visitantes/dia: estimativa, sem dado específico da pesquisa.",
     extensionBudget: 6,
     dailyVisitors: 4000,
-    corridors: makeArchetypeCorridors(3, 20),
+    zones: [{ id: "Z1", label: "Área única (provisória)", areaM2: null, bathrooms: null, covered: null, corridors: makeArchetypeCorridors(3, 20) }],
   },
 ];
+
+// Achata as zonas de um local numa lista única de corredores, carregando em cada corredor
+// os dados do setor a que ele pertence (id/nome, banheiros, cobertura, área). Quando a zona
+// informa a área real (m²), ela é repartida entre os corredores da zona proporcionalmente ao
+// nº de mesas de cada um — essa fração é usada depois no cálculo de risco de fluxo em vez da
+// estimativa por largura de corredor, porque é dado real do local, não um chute.
+function flattenZones(zones) {
+  return zones.flatMap((zone) => {
+    const zoneSlots = zone.corridors.reduce((acc, c) => acc + c.slots, 0) || 1;
+    return zone.corridors.map((c) => ({
+      ...c,
+      zoneId: zone.id,
+      zoneLabel: zone.label,
+      zoneCovered: zone.covered ?? null,
+      zoneBathrooms: zone.bathrooms ?? null,
+      zoneTotalAreaM2: zone.areaM2 ?? null,
+      areaShareM2: zone.areaM2 != null ? (zone.areaM2 * c.slots) / zoneSlots : null,
+    }));
+  });
+}
 
 // ---------- Algoritmo de alocação ----------
 // Regras, em ordem de prioridade (restrição dura primeiro):
@@ -104,18 +148,18 @@ const VENUE_PROFILES = [
 // 4) cota de novato -> pelo menos ~30% de novatos em cada corredor
 // 5) proximidade pedida -> tenta deixar lado a lado no mesmo corredor
 // 6) resto -> preenche balanceando contagem de mesas por corredor
+//
+// O algoritmo continua operando sobre corredores individuais (a restrição física é sempre
+// de corredor, não de zona inteira) — a zona só viaja junto como metadado de cada corredor.
 
 function allocate(exhibitors, venue) {
-  const corridors = venue.corridors.map((c) => ({ ...c, assigned: [] }));
+  const corridors = flattenZones(venue.zones).map((c) => ({ ...c, assigned: [] }));
   const pending = []; // restrições não atendidas, viram "pendências físicas"
   const byId = Object.fromEntries(exhibitors.map((e) => [e.id, e]));
   const placed = new Set();
   let extensionsLeft = venue.extensionBudget || 0;
   let extensionsUsed = 0;
 
-  function corridorById(id) {
-    return corridors.find((c) => c.id === id);
-  }
   function hasSpace(corridor) {
     return corridor.assigned.length < corridor.slots;
   }
@@ -256,16 +300,16 @@ function formatPending(pending, maxNamed = 6) {
 // (J. Fruin, "Pedestrian Planning and Design", 1971 — padrão usado em planejamento de
 // circulação de eventos e egressos): LOS A-C (confortável) < 1,0 p/m²; LOS D (restrito,
 // mas ok) 1,0–2,0 p/m²; LOS E-F (aglomerado, contato físico frequente) > 2,0 p/m².
-// Isso substitui a versão anterior, que só comparava corredores entre si sem nenhum
-// limite absoluto — por isso ela não conseguia dizer se algo ia "ficar apertado" de
-// verdade, só se estava relativamente pior que o resto do mesmo evento.
 const WIDTH_METERS_BY_CLASS = { largo: 4, médio: 2.5, estreito: 1.5 };
 const TABLE_FRONTAGE_METERS = 1.5; // frente média de uma mesa de expositor + vão de circulação
 const PEAK_CONCURRENCY_RATE = 0.15; // fração do público do dia presente simultaneamente no pico (estimativa, ajustável)
 const DENSITY_LIMIT_MEDIO = 1.0; // pessoas/m² — início do LOS D (Fruin)
 const DENSITY_LIMIT_ALTO = 2.0; // pessoas/m² — início do LOS E (Fruin), ponto de aglomeração
 
+// Área do corredor: usa a área real do setor (repartida por nº de mesas) quando o setor
+// informou a área em m² — senão cai pra estimativa por classe de largura, igual antes.
 function corridorAreaM2(corridor) {
+  if (corridor.areaShareM2 != null) return corridor.areaShareM2;
   const widthM = WIDTH_METERS_BY_CLASS[corridor.width] || 2.5;
   const lengthM = corridor.slots * TABLE_FRONTAGE_METERS;
   return widthM * lengthM;
@@ -292,63 +336,101 @@ function computeFlowRisk(corridors, dailyVisitors = 0) {
 // Deriva, do próprio perfil do local + do resultado da alocação, quais placas são
 // necessárias e onde colocar cada uma — não é o desenho gráfico da placa, é a lista de
 // providência (o quê, onde, por quê) pra quem vai produzir a sinalização física.
+// Agrupa por zona primeiro: banheiros e cobertura são informação do setor como um todo,
+// não de um corredor específico dentro dele.
 function generateSignagePlan(corridors, flowRisk) {
   const signs = [];
 
-  const accessibleCorridor = corridors.find((c) => c.accessibleBathroomNearby);
-
+  const zoneOrder = [];
+  const zonesById = new Map();
   corridors.forEach((c) => {
-    // identificação do corredor — sempre necessária, é o que resolve "achar a banca"
-    signs.push({
-      category: "corredor",
-      location: `Entrada do Corredor ${c.id}`,
-      text: `Corredor ${c.id} — mesas 1 a ${c.slots}`,
-    });
-
-    if (c.accessibleBathroomNearby) {
-      signs.push({
-        category: "acessibilidade",
-        location: `Corredor ${c.id}`,
-        text: "Banheiro acessível nesta direção",
-      });
-    } else if (accessibleCorridor) {
-      signs.push({
-        category: "acessibilidade",
-        location: `Entrada do Corredor ${c.id}`,
-        text: `Banheiro acessível: siga para o Corredor ${accessibleCorridor.id}`,
-      });
+    if (!zonesById.has(c.zoneId)) {
+      zonesById.set(c.zoneId, { label: c.zoneLabel, bathrooms: c.zoneBathrooms, covered: c.zoneCovered, corridors: [] });
+      zoneOrder.push(c.zoneId);
     }
-
-    if (c.soundZoneNear) {
-      signs.push({
-        category: "som",
-        location: `Entrada do Corredor ${c.id}`,
-        text: "Atenção: próximo à área de som — nível de ruído mais alto",
-      });
-    }
-
-    const risk = flowRisk && flowRisk[c.id];
-    if (risk && risk.level === "alto") {
-      signs.push({
-        category: "fluxo",
-        location: `Entrada do Corredor ${c.id}`,
-        text: "Corredor estreito, fluxo intenso — prefira rotas alternativas em horário de pico",
-      });
-    }
+    zonesById.get(c.zoneId).corridors.push(c);
   });
 
-  // mapa geral — um só, pro ponto de entrada principal, resume a ordem dos corredores
+  const accessibleCorridor = corridors.find((c) => c.accessibleBathroomNearby);
+
+  zoneOrder.forEach((zoneId) => {
+    const zone = zonesById.get(zoneId);
+
+    if (zone.bathrooms === 0) {
+      signs.push({
+        category: "infraestrutura",
+        location: `Zona ${zone.label}`,
+        text: "Nenhum banheiro nesta zona — sinalizar rota até o banheiro mais próximo ou providenciar um químico.",
+      });
+    } else if (zone.bathrooms != null) {
+      signs.push({
+        category: "infraestrutura",
+        location: `Zona ${zone.label}`,
+        text: `${zone.bathrooms} banheiro${zone.bathrooms > 1 ? "s" : ""} nesta zona.`,
+      });
+    }
+
+    if (zone.covered === false) {
+      signs.push({
+        category: "clima",
+        location: `Zona ${zone.label}`,
+        text: "Área descoberta — expositores desta zona devem prever proteção contra sol/chuva; avisar na inscrição.",
+      });
+    }
+
+    zone.corridors.forEach((c) => {
+      // identificação do corredor — sempre necessária, é o que resolve "achar a banca"
+      signs.push({
+        category: "corredor",
+        location: `Entrada do Corredor ${c.id} (${zone.label})`,
+        text: `Corredor ${c.id} — mesas 1 a ${c.slots}`,
+      });
+
+      if (c.accessibleBathroomNearby) {
+        signs.push({
+          category: "acessibilidade",
+          location: `Corredor ${c.id}`,
+          text: "Banheiro acessível nesta direção",
+        });
+      } else if (accessibleCorridor) {
+        signs.push({
+          category: "acessibilidade",
+          location: `Entrada do Corredor ${c.id}`,
+          text: `Banheiro acessível: siga para o Corredor ${accessibleCorridor.id}`,
+        });
+      }
+
+      if (c.soundZoneNear) {
+        signs.push({
+          category: "som",
+          location: `Entrada do Corredor ${c.id}`,
+          text: "Atenção: próximo à área de som — nível de ruído mais alto",
+        });
+      }
+
+      const risk = flowRisk && flowRisk[c.id];
+      if (risk && risk.level === "alto") {
+        signs.push({
+          category: "fluxo",
+          location: `Entrada do Corredor ${c.id}`,
+          text: "Corredor estreito, fluxo intenso — prefira rotas alternativas em horário de pico",
+        });
+      }
+    });
+  });
+
+  // mapa geral — um só, pro ponto de entrada principal, resume a ordem dos corredores por zona
   signs.unshift({
     category: "mapa-geral",
     location: "Entrada principal",
-    text: `Mapa geral: ${corridors.map((c) => `Corredor ${c.id} (${c.width})`).join(" → ")}`,
+    text: `Mapa geral: ${corridors.map((c) => `Corredor ${c.id} (${c.zoneLabel})`).join(" → ")}`,
   });
 
   if (!accessibleCorridor) {
     signs.push({
       category: "acessibilidade",
       location: "—",
-      text: "Nenhum corredor deste perfil está marcado com banheiro acessível perto — confirmar com o local antes do evento.",
+      text: "Nenhuma zona está marcada com banheiro acessível perto — confirmar com o local antes do evento.",
     });
   }
 
@@ -396,24 +478,37 @@ function generateExhibitors(n, seed = 42) {
   return list;
 }
 
-// Monta um novo perfil de local a partir das linhas do formulário "+ Cadastrar novo local"
-// (cada row: { width, slots, outletRate, accessibleBathroomNearby, soundZoneNear }).
-function buildProfileFromRows(name, rows, dailyVisitors = 1000) {
+// Monta um novo perfil de local a partir dos setores do formulário "+ Cadastrar novo local".
+// `zonesInput`: [{ label, areaM2, bathrooms, covered, rows: [{width,slots,outletRate,
+// accessibleBathroomNearby,soundZoneNear}, ...] }, ...] — um setor pode ter vários corredores.
+// Os ids de corredor (A, B, C...) são globais pro local inteiro, não reiniciam por setor.
+function buildProfileFromRows(name, zonesInput, dailyVisitors = 1000) {
   const widthFactorByLabel = { largo: 3, médio: 2, estreito: 1 };
-  const corridors = rows.map((row, i) => {
-    const id = String.fromCharCode(65 + i);
+  let letterIndex = 0;
+  const zones = zonesInput.map((zoneInput, zi) => {
+    const corridors = zoneInput.rows.map((row) => {
+      const id = String.fromCharCode(65 + letterIndex++);
+      return {
+        id,
+        label: `Corredor ${id}`,
+        width: row.width,
+        widthFactor: widthFactorByLabel[row.width] || 2,
+        slots: row.slots,
+        powerPoints: computePowerPoints(row.slots, row.outletRate ?? OUTLET_RATE),
+        accessibleBathroomNearby: !!row.accessibleBathroomNearby,
+        soundZoneNear: !!row.soundZoneNear,
+      };
+    });
     return {
-      id,
-      label: `Corredor ${id}`,
-      width: row.width,
-      widthFactor: widthFactorByLabel[row.width] || 2,
-      slots: row.slots,
-      powerPoints: computePowerPoints(row.slots, row.outletRate ?? OUTLET_RATE),
-      accessibleBathroomNearby: !!row.accessibleBathroomNearby,
-      soundZoneNear: !!row.soundZoneNear,
+      id: `Z${zi + 1}`,
+      label: zoneInput.label || `Setor ${zi + 1}`,
+      areaM2: zoneInput.areaM2 ?? null,
+      bathrooms: zoneInput.bathrooms ?? null,
+      covered: zoneInput.covered ?? null,
+      corridors,
     };
   });
-  const totalSlots = corridors.reduce((acc, c) => acc + c.slots, 0);
+  const totalSlots = zones.reduce((acc, z) => acc + z.corridors.reduce((a, c) => a + c.slots, 0), 0);
   return {
     id: `custom-${Date.now()}`,
     name: name || "Local sem nome",
@@ -421,7 +516,7 @@ function buildProfileFromRows(name, rows, dailyVisitors = 1000) {
     note: "Cadastrado manualmente nesta sessão do navegador.",
     extensionBudget: Math.max(2, Math.ceil(totalSlots * 0.04)),
     dailyVisitors,
-    corridors,
+    zones,
   };
 }
 
