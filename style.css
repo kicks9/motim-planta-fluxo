@@ -219,7 +219,10 @@ main {
   flex: 1 1 220px;
 }
 .setor-area,
-.setor-banheiros {
+.setor-banheiros,
+.setor-tomadas,
+.setor-extensoes,
+.setor-extensao-tamanho {
   width: 90px;
   font-family: "Inter", sans-serif;
   font-size: 13px;
@@ -352,6 +355,7 @@ main {
 .sinalizacao-item--mapa-geral { border-left-color: var(--laranja); }
 .sinalizacao-item--infraestrutura { border-left-color: var(--azul); }
 .sinalizacao-item--clima { border-left-color: #9b4a08; }
+.sinalizacao-item--energia { border-left-color: #7a4ec7; }
 
 .sinalizacao-tipo {
   font-weight: 700;
@@ -365,6 +369,25 @@ main {
 }
 .sinalizacao-texto {
   font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  header.topo {
+    padding: 24px 16px;
+  }
+  main {
+    padding: 16px;
+  }
+  .sinalizacao-item {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .sinalizacao-local {
+    opacity: 0.6;
+  }
+  .setor-nome {
+    flex-basis: 100%;
+  }
 }
 
 @media print {

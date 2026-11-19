@@ -11,8 +11,10 @@
 // Um local é dividido em zonas (setores físicos — ex: "Pátio Externo", "Galpão 2"), e cada
 // zona pode ter vários corredores de passagem dentro dela. A zona carrega os dados que só
 // fazem sentido no nível do setor como um todo: área aproximada (m²), quantos banheiros tem
-// ali, e se é uma área coberta ou exposta ao tempo — nenhum desses é propriedade de "um
-// corredor", são do espaço físico que os corredores dividem entre si.
+// ali, se é uma área coberta ou exposta ao tempo, quantos pontos de tomada fixos o setor
+// realmente tem, e quantas extensões (e de que tamanho) a organização planeja levar pra lá —
+// nenhum desses é propriedade de "um corredor", são do espaço físico que os corredores
+// dividem entre si.
 
 // Espalha N pontos de energia ao longo de `slots` posições (só define a capacidade, não a
 // posição física exata — a planta real decide isso).
@@ -61,6 +63,9 @@ const VENUE_PROFILES = [
         areaM2: 120,
         bathrooms: 2,
         covered: true,
+        outletPoints: 6,
+        extensionCount: 2,
+        extensionLengthMeters: 10,
         corridors: [
           { id: "A", label: "Corredor A", width: "largo", widthFactor: 3, slots: 10, powerPoints: [2, 7], accessibleBathroomNearby: true, soundZoneNear: false },
           { id: "B", label: "Corredor B", width: "médio", widthFactor: 2, slots: 10, powerPoints: [4], accessibleBathroomNearby: false, soundZoneNear: false },
@@ -73,21 +78,42 @@ const VENUE_PROFILES = [
     id: "conic-n22",
     name: "Conic — SDS Conic (edição N22)",
     verified: true,
-    note: "Baseado na lista pública de expositores da N22 (motim.art/expositores-n22): 3 corredores (A/B/C), entrada Sul e Norte. A contagem de mesas é aproximada — a numeração real tem lacunas e subdivisões (ex: A103.1/A103.2) — e a posição do banheiro acessível/zona de som não está confirmada, ajuste se souber o real. Visitantes/dia: estimativa (N22 é o formato reduzido 'Montim', menor que as grandes edições de +10 mil/dia) — ajuste se souber o real. Área do setor, nº de banheiros e cobertura ainda não foram confirmados com o local — por isso ficam em branco até alguém da organização preencher.",
+    note: "Baseado na lista pública de expositores da N22 (motim.art/expositores-n22): 3 setores (A/B/C), entrada Sul e Norte — Setor A é o grande, B e C são médios. A contagem de mesas é aproximada — a numeração real tem lacunas e subdivisões (ex: A103.1/A103.2) — e a posição do banheiro acessível/zona de som não está confirmada, ajuste se souber o real. Visitantes/dia: estimativa (N22 é o formato reduzido 'Montim', menor que as grandes edições de +10 mil/dia) — ajuste se souber o real. Área de cada setor, nº de banheiros, cobertura e tomadas ainda não foram confirmados com o local — por isso ficam em branco até alguém da organização preencher.",
     extensionBudget: 10,
     dailyVisitors: 3000,
     zones: [
       {
-        id: "Z1",
-        label: "Área principal (Sul/Norte ainda não diferenciado)",
+        id: "ZA",
+        label: "Setor A — grande",
         areaM2: null,
         bathrooms: null,
         covered: null,
-        corridors: [
-          { id: "A", label: "Corredor A", width: "largo", widthFactor: 3, slots: 113, powerPoints: computePowerPoints(113), accessibleBathroomNearby: true, soundZoneNear: false },
-          { id: "B", label: "Corredor B", width: "médio", widthFactor: 2, slots: 52, powerPoints: computePowerPoints(52), accessibleBathroomNearby: false, soundZoneNear: false },
-          { id: "C", label: "Corredor C", width: "estreito", widthFactor: 1, slots: 52, powerPoints: computePowerPoints(52), accessibleBathroomNearby: false, soundZoneNear: true },
-        ],
+        outletPoints: null,
+        extensionCount: null,
+        extensionLengthMeters: null,
+        corridors: [{ id: "A", label: "Corredor A", width: "largo", widthFactor: 3, slots: 113, powerPoints: computePowerPoints(113), accessibleBathroomNearby: true, soundZoneNear: false }],
+      },
+      {
+        id: "ZB",
+        label: "Setor B — médio",
+        areaM2: null,
+        bathrooms: null,
+        covered: null,
+        outletPoints: null,
+        extensionCount: null,
+        extensionLengthMeters: null,
+        corridors: [{ id: "B", label: "Corredor B", width: "médio", widthFactor: 2, slots: 52, powerPoints: computePowerPoints(52), accessibleBathroomNearby: false, soundZoneNear: false }],
+      },
+      {
+        id: "ZC",
+        label: "Setor C — médio",
+        areaM2: null,
+        bathrooms: null,
+        covered: null,
+        outletPoints: null,
+        extensionCount: null,
+        extensionLengthMeters: null,
+        corridors: [{ id: "C", label: "Corredor C", width: "médio", widthFactor: 2, slots: 52, powerPoints: computePowerPoints(52), accessibleBathroomNearby: false, soundZoneNear: true }],
       },
     ],
   },
@@ -98,7 +124,7 @@ const VENUE_PROFILES = [
     note: "Local mais recorrente da Motim nas edições grandes (+325 expositores), mas ainda sem mapeamento detalhado de corredores — esqueleto gerado automaticamente. Substitua pelos corredores reais antes de usar pra decisão de verdade. Visitantes/dia: 10 mil, direto da pesquisa exploratória (edições grandes).",
     extensionBudget: 10,
     dailyVisitors: 10000,
-    zones: [{ id: "Z1", label: "Área única (provisória)", areaM2: null, bathrooms: null, covered: null, corridors: makeArchetypeCorridors(5, 24) }],
+    zones: [{ id: "Z1", label: "Área única — provisória", areaM2: null, bathrooms: null, covered: null, outletPoints: null, extensionCount: null, extensionLengthMeters: null, corridors: makeArchetypeCorridors(5, 24) }],
   },
   {
     id: "museu-nacional",
@@ -107,7 +133,7 @@ const VENUE_PROFILES = [
     note: "Edição recorde de público (+14 mil em 2 dias ≈ 7 mil/dia), sem mapeamento detalhado ainda — esqueleto provisório.",
     extensionBudget: 8,
     dailyVisitors: 7000,
-    zones: [{ id: "Z1", label: "Área única (provisória)", areaM2: null, bathrooms: null, covered: null, corridors: makeArchetypeCorridors(4, 24) }],
+    zones: [{ id: "Z1", label: "Área única — provisória", areaM2: null, bathrooms: null, covered: null, outletPoints: null, extensionCount: null, extensionLengthMeters: null, corridors: makeArchetypeCorridors(4, 24) }],
   },
   {
     id: "ccbb",
@@ -116,15 +142,18 @@ const VENUE_PROFILES = [
     note: "Sem mapeamento detalhado ainda — esqueleto provisório. Visitantes/dia: estimativa, sem dado específico da pesquisa.",
     extensionBudget: 6,
     dailyVisitors: 4000,
-    zones: [{ id: "Z1", label: "Área única (provisória)", areaM2: null, bathrooms: null, covered: null, corridors: makeArchetypeCorridors(3, 20) }],
+    zones: [{ id: "Z1", label: "Área única — provisória", areaM2: null, bathrooms: null, covered: null, outletPoints: null, extensionCount: null, extensionLengthMeters: null, corridors: makeArchetypeCorridors(3, 20) }],
   },
 ];
 
 // Achata as zonas de um local numa lista única de corredores, carregando em cada corredor
-// os dados do setor a que ele pertence (id/nome, banheiros, cobertura, área). Quando a zona
-// informa a área real (m²), ela é repartida entre os corredores da zona proporcionalmente ao
-// nº de mesas de cada um — essa fração é usada depois no cálculo de risco de fluxo em vez da
-// estimativa por largura de corredor, porque é dado real do local, não um chute.
+// os dados do setor a que ele pertence (id/nome, banheiros, cobertura, área, tomadas,
+// extensões). Quando a zona informa a área real (m²), ela é repartida entre os corredores da
+// zona proporcionalmente ao nº de mesas de cada um — essa fração é usada depois no cálculo de
+// risco de fluxo em vez da estimativa por largura de corredor, porque é dado real do local,
+// não um chute. O mesmo vale pros pontos de tomada reais: quando o setor informa quantos tem
+// de verdade, isso substitui o número calculado pela taxa fixa (25%) na hora de decidir se um
+// corredor ainda tem tomada livre.
 function flattenZones(zones) {
   return zones.flatMap((zone) => {
     const zoneSlots = zone.corridors.reduce((acc, c) => acc + c.slots, 0) || 1;
@@ -135,7 +164,11 @@ function flattenZones(zones) {
       zoneCovered: zone.covered ?? null,
       zoneBathrooms: zone.bathrooms ?? null,
       zoneTotalAreaM2: zone.areaM2 ?? null,
+      zoneOutletPoints: zone.outletPoints ?? null,
+      zoneExtensionCount: zone.extensionCount ?? null,
+      zoneExtensionLengthMeters: zone.extensionLengthMeters ?? null,
       areaShareM2: zone.areaM2 != null ? (zone.areaM2 * c.slots) / zoneSlots : null,
+      realOutletCount: zone.outletPoints != null ? Math.round((zone.outletPoints * c.slots) / zoneSlots) : null,
     }));
   });
 }
@@ -168,8 +201,9 @@ function allocate(exhibitors, venue) {
     placed.add(exhibitor.id);
   }
   function freeOutletSlotCount(corridor) {
+    const totalOutlets = corridor.realOutletCount ?? corridor.powerPoints.length;
     const used = corridor.assigned.filter((e) => e.needsOutlet).length;
-    return Math.max(corridor.powerPoints.length - used, 0);
+    return Math.max(totalOutlets - used, 0);
   }
 
   // 1) cadeirantes — corredor largo com banheiro acessível perto
@@ -345,7 +379,15 @@ function generateSignagePlan(corridors, flowRisk) {
   const zonesById = new Map();
   corridors.forEach((c) => {
     if (!zonesById.has(c.zoneId)) {
-      zonesById.set(c.zoneId, { label: c.zoneLabel, bathrooms: c.zoneBathrooms, covered: c.zoneCovered, corridors: [] });
+      zonesById.set(c.zoneId, {
+        label: c.zoneLabel,
+        bathrooms: c.zoneBathrooms,
+        covered: c.zoneCovered,
+        outletPoints: c.zoneOutletPoints,
+        extensionCount: c.zoneExtensionCount,
+        extensionLengthMeters: c.zoneExtensionLengthMeters,
+        corridors: [],
+      });
       zoneOrder.push(c.zoneId);
     }
     zonesById.get(c.zoneId).corridors.push(c);
@@ -375,6 +417,29 @@ function generateSignagePlan(corridors, flowRisk) {
         category: "clima",
         location: `Zona ${zone.label}`,
         text: "Área descoberta — expositores desta zona devem prever proteção contra sol/chuva; avisar na inscrição.",
+      });
+    }
+
+    if (zone.outletPoints === 0) {
+      signs.push({
+        category: "energia",
+        location: `Zona ${zone.label}`,
+        text: "Nenhum ponto de tomada fixo nesta zona — expositores que precisam de energia dependem só de extensão.",
+      });
+    } else if (zone.outletPoints != null) {
+      signs.push({
+        category: "energia",
+        location: `Zona ${zone.label}`,
+        text: zone.outletPoints === 1 ? "1 ponto de tomada fixo nesta zona." : `${zone.outletPoints} pontos de tomada fixos nesta zona.`,
+      });
+    }
+
+    if (zone.extensionCount != null) {
+      const lengthText = zone.extensionLengthMeters != null ? ` de ~${zone.extensionLengthMeters}m${zone.extensionCount === 1 ? "" : " cada"}` : "";
+      signs.push({
+        category: "energia",
+        location: `Zona ${zone.label}`,
+        text: `Levar ${zone.extensionCount} ${zone.extensionCount === 1 ? "extensão" : "extensões"}${lengthText} pra cobrir a demanda de tomada aqui.`,
       });
     }
 
@@ -505,6 +570,9 @@ function buildProfileFromRows(name, zonesInput, dailyVisitors = 1000) {
       areaM2: zoneInput.areaM2 ?? null,
       bathrooms: zoneInput.bathrooms ?? null,
       covered: zoneInput.covered ?? null,
+      outletPoints: zoneInput.outletPoints ?? null,
+      extensionCount: zoneInput.extensionCount ?? null,
+      extensionLengthMeters: zoneInput.extensionLengthMeters ?? null,
       corridors,
     };
   });

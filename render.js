@@ -60,7 +60,16 @@ function groupByZone(corridors) {
   const byZone = new Map();
   corridors.forEach((c) => {
     if (!byZone.has(c.zoneId)) {
-      byZone.set(c.zoneId, { label: c.zoneLabel, bathrooms: c.zoneBathrooms, covered: c.zoneCovered, areaM2: c.zoneTotalAreaM2, corridors: [] });
+      byZone.set(c.zoneId, {
+        label: c.zoneLabel,
+        bathrooms: c.zoneBathrooms,
+        covered: c.zoneCovered,
+        areaM2: c.zoneTotalAreaM2,
+        outletPoints: c.zoneOutletPoints,
+        extensionCount: c.zoneExtensionCount,
+        extensionLengthMeters: c.zoneExtensionLengthMeters,
+        corridors: [],
+      });
       order.push(c.zoneId);
     }
     byZone.get(c.zoneId).corridors.push(c);
@@ -73,6 +82,10 @@ function zoneMetaLine(zone) {
   parts.push(zone.areaM2 != null ? `~${Math.round(zone.areaM2)} m²` : "área: a confirmar");
   parts.push(zone.bathrooms != null ? `${zone.bathrooms} banheiro${zone.bathrooms === 1 ? "" : "s"}` : "banheiros: a confirmar");
   parts.push(zone.covered === true ? "coberta" : zone.covered === false ? "descoberta" : "cobertura: a confirmar");
+  parts.push(zone.outletPoints != null ? `${zone.outletPoints} tomada${zone.outletPoints === 1 ? "" : "s"}` : "tomadas: a confirmar");
+  if (zone.extensionCount != null) {
+    parts.push(`${zone.extensionCount} ${zone.extensionCount === 1 ? "extensão" : "extensões"}${zone.extensionLengthMeters != null ? ` (~${zone.extensionLengthMeters}m)` : ""}`);
+  }
   return parts.join(" · ");
 }
 
@@ -156,6 +169,7 @@ const SIGNAGE_LABEL = {
   fluxo: "Risco de fluxo",
   infraestrutura: "Infraestrutura (banheiro)",
   clima: "Clima/cobertura",
+  energia: "Energia (tomada/extensão)",
 };
 
 function renderSignage(signs) {
@@ -237,7 +251,7 @@ function addCorredorRow(container, prefill) {
       <option value="médio">médio</option>
       <option value="estreito">estreito</option>
     </select>
-    <input type="number" class="row-slots" min="1" value="${prefill?.slots ?? 20}" placeholder="mesas" />
+    <label>Mesas <input type="number" class="row-slots" min="1" value="${prefill?.slots ?? 20}" /></label>
     <label><input type="checkbox" class="row-bathroom" ${prefill?.accessibleBathroomNearby ? "checked" : ""} /> banheiro acessível perto</label>
     <label><input type="checkbox" class="row-sound" ${prefill?.soundZoneNear ? "checked" : ""} /> perto da zona de som</label>
     <button type="button" class="row-remover" title="Remover corredor">✕</button>
@@ -257,6 +271,9 @@ function addSetorBlock(prefill) {
       <label>Área do setor (m²) <input type="number" class="setor-area" min="0" placeholder="opcional" /></label>
       <label>Banheiros no setor <input type="number" class="setor-banheiros" min="0" placeholder="opcional" /></label>
       <label><input type="checkbox" class="setor-coberto" /> área coberta</label>
+      <label>Tomadas no setor <input type="number" class="setor-tomadas" min="0" placeholder="opcional" /></label>
+      <label>Nº de extensões <input type="number" class="setor-extensoes" min="0" placeholder="opcional" /></label>
+      <label>Tamanho da extensão (m) <input type="number" class="setor-extensao-tamanho" min="0" placeholder="opcional" /></label>
       <button type="button" class="setor-remover" title="Remover setor">✕</button>
     </div>
     <div class="setor-corredores"></div>
@@ -284,6 +301,9 @@ function readSetores() {
     areaM2: block.querySelector(".setor-area").value !== "" ? parseFloat(block.querySelector(".setor-area").value) : null,
     bathrooms: block.querySelector(".setor-banheiros").value !== "" ? parseInt(block.querySelector(".setor-banheiros").value, 10) : null,
     covered: block.querySelector(".setor-coberto").checked,
+    outletPoints: block.querySelector(".setor-tomadas").value !== "" ? parseInt(block.querySelector(".setor-tomadas").value, 10) : null,
+    extensionCount: block.querySelector(".setor-extensoes").value !== "" ? parseInt(block.querySelector(".setor-extensoes").value, 10) : null,
+    extensionLengthMeters: block.querySelector(".setor-extensao-tamanho").value !== "" ? parseFloat(block.querySelector(".setor-extensao-tamanho").value) : null,
     rows: Array.from(block.querySelectorAll(".corredor-row")).map((row) => ({
       width: row.querySelector(".row-width").value,
       slots: Math.max(1, parseInt(row.querySelector(".row-slots").value, 10) || 1),
