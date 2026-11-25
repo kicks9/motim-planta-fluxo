@@ -242,9 +242,14 @@ function renderPerfilInfo(profile) {
 // ---------- Formulário "+ Cadastrar novo local" ----------
 // Um setor (zona física) pode ter vários corredores dentro dele — por isso os corredores
 // são renderizados aninhados dentro do bloco do próprio setor, não numa lista só pro local.
+function animateOut(el, baseClass) {
+  el.classList.add(`${baseClass}--sai`);
+  el.addEventListener("transitionend", () => el.remove(), { once: true });
+}
+
 function addCorredorRow(container, prefill) {
   const row = document.createElement("div");
-  row.className = "corredor-row";
+  row.className = "corredor-row corredor-row--entra";
   row.innerHTML = `
     <select class="row-width">
       <option value="largo">largo</option>
@@ -257,14 +262,15 @@ function addCorredorRow(container, prefill) {
     <button type="button" class="row-remover" title="Remover corredor">✕</button>
   `;
   row.querySelector(".row-width").value = prefill?.width || "médio";
-  row.querySelector(".row-remover").addEventListener("click", () => row.remove());
+  row.querySelector(".row-remover").addEventListener("click", () => animateOut(row, "corredor-row"));
   container.appendChild(row);
+  requestAnimationFrame(() => row.classList.remove("corredor-row--entra"));
 }
 
 function addSetorBlock(prefill) {
   const container = document.getElementById("setores-container");
   const block = document.createElement("div");
-  block.className = "setor-block";
+  block.className = "setor-block setor-block--entra";
   block.innerHTML = `
     <div class="setor-campos">
       <input type="text" class="setor-nome" placeholder="Nome do setor (ex: Pátio Externo)" value="${prefill?.label ?? ""}" />
@@ -281,8 +287,9 @@ function addSetorBlock(prefill) {
   `;
   const corredoresWrap = block.querySelector(".setor-corredores");
   block.querySelector(".setor-add-corredor").addEventListener("click", () => addCorredorRow(corredoresWrap));
-  block.querySelector(".setor-remover").addEventListener("click", () => block.remove());
+  block.querySelector(".setor-remover").addEventListener("click", () => animateOut(block, "setor-block"));
   container.appendChild(block);
+  requestAnimationFrame(() => block.classList.remove("setor-block--entra"));
 
   const rows = prefill?.rows ?? [{ width: "largo", slots: 20, accessibleBathroomNearby: true }, { width: "médio", slots: 20 }, { width: "estreito", slots: 20, soundZoneNear: true }];
   rows.forEach((row) => addCorredorRow(corredoresWrap, row));
@@ -314,7 +321,15 @@ function readSetores() {
 }
 
 function toggleNovoLocalForm(show) {
-  document.getElementById("form-novo-local").hidden = !show;
+  const form = document.getElementById("form-novo-local");
+  if (show) {
+    form.hidden = false;
+    form.classList.add("form-novo-local--entrando");
+    requestAnimationFrame(() => form.classList.remove("form-novo-local--entrando"));
+  } else {
+    form.classList.add("form-novo-local--entrando");
+    form.addEventListener("transitionend", () => { form.hidden = true; }, { once: true });
+  }
 }
 
 // ---------- Dataset atual + execução ----------

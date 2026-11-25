@@ -16,6 +16,7 @@
 
   <details class="premissas">
     <summary>Premissas do modelo (teste de carga 200/230)</summary>
+    <div class="premissas-conteudo">
     <ul>
       <li><strong>Taxa de demanda de tomada (25%):</strong> proporção de expositores que marcam "preciso de tomada" na inscrição — usada tanto pra gerar os dados de teste quanto pra calibrar quantos pontos de energia cada corredor recebe. É uma estimativa; o ideal é substituir pelo percentual real assim que houver dado de inscrição.</li>
       <li><strong>Estoque de extensões:</strong> extensões que a organização leva no dia (2 no exemplo pequeno; ≈4% do total de expositores nos testes de carga, mín. 2). Cobre o desbalanceamento natural da alocação — corredores que enchem primeiro por causa das regras de acessibilidade/som acabam recebendo mais pedidos de tomada do que os pontos fixos aguentam — sem precisar de ponto de energia novo. Só vira pendência de verdade se esse estoque também acabar.</li>
@@ -24,6 +25,7 @@
       <li><strong>Zona (setor):</strong> um local real não é só uma lista de corredores — é dividido em setores físicos (ex: "Pátio Externo", "Galpão 2"), e cada setor pode ter vários corredores de passagem dentro dele. Área (m²), nº de banheiros e se é coberta ou descoberta são informação do setor como um todo, não de um corredor específico. Quando a área real do setor é preenchida, ela substitui a estimativa por largura de corredor no cálculo de risco de fluxo; quando não é, o campo aparece como "a confirmar" e o cálculo usa a estimativa de antes. Banheiros e cobertura entram direto na lista de sinalização (categorias "Infraestrutura" e "Clima/cobertura").</li>
       <li><strong>Tomadas e extensões do setor:</strong> cada setor também pode informar quantos pontos de tomada fixos realmente existem ali. Quando preenchido, esse número substitui a taxa fixa de 25% no cálculo de "tem tomada livre nesse corredor?" — vira dado real do local em vez de estimativa. O setor também pode registrar quantas extensões a organização planeja levar pra lá e o tamanho aproximado de cada uma (em metros); isso é só informativo pra lista de providência (categoria "Energia" na sinalização) e não muda o estoque global de extensões usado na alocação.</li>
     </ul>
+    </div>
   </details>
 
   <main>
