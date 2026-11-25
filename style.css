@@ -334,6 +334,22 @@ main {
   flex-wrap: wrap;
 }
 
+#expositores-arquivo {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+#expositores-texto {
+  width: 100%;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid var(--azul);
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
 .sinalizacao {
   background: #fff;
   border: 2px solid var(--azul);

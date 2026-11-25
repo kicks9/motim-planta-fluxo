@@ -543,6 +543,85 @@ function generateExhibitors(n, seed = 42) {
   return list;
 }
 
+// ---------- Importação de expositores reais (documento do organizador) ----------
+// Lê o texto colado ou enviado como arquivo (CSV/TSV — vírgula, ponto-e-vírgula ou tab,
+// detectado automaticamente) e converte pro mesmo formato que generateExhibitors produz, pra
+// usar o nome, categoria e condições reais em vez dos dados sintéticos de demonstração. O
+// cabeçalho (primeira linha) é flexível: reconhece variações comuns de nome de coluna em
+// português, então não precisa ser exatamente esse texto, só precisa dar pra identificar.
+const EXHIBITOR_FIELD_ALIASES = {
+  name: ["nome", "name", "expositor"],
+  category: ["categoria", "o que faz", "produto", "tipo", "atividade"],
+  needsOutlet: ["tomada", "energia", "precisa de tomada", "precisa tomada"],
+  wheelchair: ["pcd", "cadeirante", "acessibilidade", "cadeira de rodas"],
+  soundSensitive: ["som", "sensivel a som", "sensível a som", "barulho"],
+  novice: ["novato", "iniciante", "primeira vez"],
+};
+
+function normalizeHeader(text) {
+  return (text || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function detectDelimiter(headerLine) {
+  const candidates = [",", ";", "\t"];
+  return candidates.sort((a, b) => headerLine.split(b).length - headerLine.split(a).length)[0];
+}
+
+function parseBoolean(value) {
+  const v = (value || "").trim().toLowerCase();
+  return ["sim", "s", "yes", "y", "true", "1", "x"].includes(v);
+}
+
+function parseExhibitorsCsv(text) {
+  const lines = (text || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  if (!lines.length) return { exhibitors: [], errors: ["Nenhuma linha encontrada — cole a lista ou escolha um arquivo."] };
+
+  const delimiter = detectDelimiter(lines[0]);
+  const header = lines[0].split(delimiter).map(normalizeHeader);
+
+  const colIndex = {};
+  Object.entries(EXHIBITOR_FIELD_ALIASES).forEach(([field, aliases]) => {
+    const idx = header.findIndex((h) => aliases.some((a) => h === normalizeHeader(a) || h.includes(normalizeHeader(a))));
+    if (idx !== -1) colIndex[field] = idx;
+  });
+
+  if (colIndex.name == null) {
+    return { exhibitors: [], errors: ['Não encontrei uma coluna de nome na primeira linha (ex: "Nome"). Confira o cabeçalho.'] };
+  }
+
+  const exhibitors = [];
+  const errors = [];
+  lines.slice(1).forEach((line, i) => {
+    const cols = line.split(delimiter);
+    const name = (cols[colIndex.name] || "").trim();
+    if (!name) {
+      errors.push(`Linha ${i + 2}: sem nome, foi pulada.`);
+      return;
+    }
+    exhibitors.push({
+      id: exhibitors.length + 1,
+      name,
+      category: (colIndex.category != null ? (cols[colIndex.category] || "").trim() : "") || "Geral",
+      needsOutlet: colIndex.needsOutlet != null ? parseBoolean(cols[colIndex.needsOutlet]) : false,
+      accessibility: colIndex.wheelchair != null && parseBoolean(cols[colIndex.wheelchair]) ? "wheelchair" : "none",
+      soundSensitive: colIndex.soundSensitive != null ? parseBoolean(cols[colIndex.soundSensitive]) : false,
+      novice: colIndex.novice != null ? parseBoolean(cols[colIndex.novice]) : false,
+      // sem dado real de popularidade ainda — trata todo mundo igual nessa métrica
+      // (só afeta o peso de risco de fluxo, não a alocação em si).
+      popularity: 0.3,
+    });
+  });
+
+  return { exhibitors, errors };
+}
+
 // Monta um novo perfil de local a partir dos setores do formulário "+ Cadastrar novo local".
 // `zonesInput`: [{ label, areaM2, bathrooms, covered, rows: [{width,slots,outletRate,
 // accessibleBathroomNearby,soundZoneNear}, ...] }, ...] — um setor pode ter vários corredores.
@@ -598,4 +677,5 @@ window.MotimApp = {
   computePowerPoints,
   buildProfileFromRows,
   generateSignagePlan,
+  parseExhibitorsCsv,
 };

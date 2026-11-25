@@ -47,9 +47,26 @@
         <input type="checkbox" id="toggle-risco" checked />
         Mostrar risco de fluxo por corredor
       </label>
+      <button id="abrir-expositores" type="button" class="botao-secundario">Lista real de expositores</button>
     </section>
 
     <p id="perfil-info" class="perfil-info"></p>
+    <p id="expositores-status" class="perfil-info" hidden></p>
+
+    <section id="form-expositores" class="form-novo-local" hidden>
+      <h3>Lista real de expositores</h3>
+      <p class="form-novo-local-desc">
+        Cole aqui (ou envie um arquivo .csv) a lista de expositores desta edição, com nome, o que cada um faz e as condições dele. A primeira linha é o cabeçalho — aceito variações como "Nome", "Categoria", "Precisa de tomada", "PCD", "Sensível a som", "Novato". Fica salvo só neste navegador.
+      </p>
+      <input type="file" id="expositores-arquivo" accept=".csv,.txt" />
+      <textarea id="expositores-texto" rows="8" placeholder="Nome,Categoria,Precisa de tomada,PCD,Sensível a som,Novato
+Ana Lima,Cerâmica,sim,não,não,sim
+Bruno Dias,Fanzine,não,não,sim,não"></textarea>
+      <div class="form-novo-local-acoes">
+        <button id="carregar-expositores" type="button" class="botao-principal">Carregar lista</button>
+        <button id="cancelar-expositores" type="button" class="botao-secundario">Cancelar</button>
+      </div>
+    </section>
 
     <section id="form-novo-local" class="form-novo-local" hidden>
       <h3>Cadastrar novo local</h3>

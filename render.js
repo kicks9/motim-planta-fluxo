@@ -189,6 +189,68 @@ const NOVO_LOCAL_VALUE = "__novo__";
 let profiles = [];
 let lastProfileId = null;
 
+// ---------- Lista real de expositores (opcional, substitui os dados de demonstração) ----------
+let customExhibitors = null;
+
+function loadCustomExhibitors() {
+  try {
+    const raw = localStorage.getItem("motim-expositores-custom");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCustomExhibitors(list) {
+  try {
+    localStorage.setItem("motim-expositores-custom", JSON.stringify(list));
+  } catch {
+    // armazenamento indisponível (ex: aba anônima) — lista continua valendo só nesta sessão
+  }
+}
+
+function clearCustomExhibitors() {
+  customExhibitors = null;
+  try {
+    localStorage.removeItem("motim-expositores-custom");
+  } catch {
+    // nada a fazer
+  }
+}
+
+function renderExpositoresStatus() {
+  const status = document.getElementById("expositores-status");
+  const qtdInput = document.getElementById("qtd-expositores");
+  if (!customExhibitors) {
+    status.hidden = true;
+    qtdInput.disabled = false;
+    return;
+  }
+  qtdInput.disabled = true;
+  qtdInput.value = customExhibitors.length;
+  status.hidden = false;
+  status.innerHTML = `Usando lista real: <strong>${customExhibitors.length} expositores</strong> carregados. <button type="button" id="remover-expositores" class="botao-secundario">Voltar pros dados de demonstração</button>`;
+  document.getElementById("remover-expositores").addEventListener("click", () => {
+    clearCustomExhibitors();
+    renderExpositoresStatus();
+    const currentProfile = profiles.find((p) => p.id === document.getElementById("perfil-local").value);
+    if (currentProfile) qtdInput.value = profileCapacity(currentProfile);
+    runAndRender();
+  });
+}
+
+function toggleExpositoresForm(show) {
+  const form = document.getElementById("form-expositores");
+  if (show) {
+    form.hidden = false;
+    form.classList.add("form-novo-local--entrando");
+    requestAnimationFrame(() => form.classList.remove("form-novo-local--entrando"));
+  } else {
+    form.classList.add("form-novo-local--entrando");
+    form.addEventListener("transitionend", () => { form.hidden = true; }, { once: true });
+  }
+}
+
 function loadCustomProfiles() {
   try {
     const raw = localStorage.getItem("motim-perfis-custom");
@@ -337,13 +399,24 @@ function currentDataset() {
   const { generateExhibitors } = window.MotimApp;
   const profile = profiles.find((p) => p.id === document.getElementById("perfil-local").value);
   const capacity = profileCapacity(profile);
+  const dailyVisitors = parseInt(document.getElementById("qtd-visitantes").value, 10) || profile.dailyVisitors || 0;
+
+  if (customExhibitors) {
+    let exhibitors = customExhibitors;
+    let overflow = false;
+    if (exhibitors.length > capacity) {
+      overflow = true;
+      exhibitors = exhibitors.slice(0, capacity);
+    }
+    return { exhibitors, venue: { zones: profile.zones, extensionBudget: profile.extensionBudget }, profile, overflow, capacity, dailyVisitors };
+  }
+
   let n = parseInt(document.getElementById("qtd-expositores").value, 10) || capacity;
   let overflow = false;
   if (n > capacity) {
     overflow = true;
     n = capacity;
   }
-  const dailyVisitors = parseInt(document.getElementById("qtd-visitantes").value, 10) || profile.dailyVisitors || 0;
   return { exhibitors: generateExhibitors(n), venue: { zones: profile.zones, extensionBudget: profile.extensionBudget }, profile, overflow, capacity, dailyVisitors };
 }
 
@@ -374,6 +447,9 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("qtd-expositores").value = profileCapacity(profiles[0]);
   document.getElementById("qtd-visitantes").value = profiles[0].dailyVisitors || 0;
 
+  customExhibitors = loadCustomExhibitors();
+  renderExpositoresStatus();
+
   document.getElementById("perfil-local").addEventListener("change", (ev) => {
     if (ev.target.value === NOVO_LOCAL_VALUE) {
       toggleNovoLocalForm(true);
@@ -383,7 +459,7 @@ window.addEventListener("DOMContentLoaded", () => {
     toggleNovoLocalForm(false);
     lastProfileId = ev.target.value;
     const profile = profiles.find((p) => p.id === lastProfileId);
-    document.getElementById("qtd-expositores").value = profileCapacity(profile);
+    if (!customExhibitors) document.getElementById("qtd-expositores").value = profileCapacity(profile);
     document.getElementById("qtd-visitantes").value = profile.dailyVisitors || 0;
     runAndRender();
   });
@@ -409,8 +485,41 @@ window.addEventListener("DOMContentLoaded", () => {
     toggleNovoLocalForm(false);
     lastProfileId = profile.id;
     populatePerfilSelect(lastProfileId);
-    document.getElementById("qtd-expositores").value = profileCapacity(profile);
+    if (!customExhibitors) document.getElementById("qtd-expositores").value = profileCapacity(profile);
     document.getElementById("qtd-visitantes").value = profile.dailyVisitors;
+    runAndRender();
+  });
+
+  document.getElementById("abrir-expositores").addEventListener("click", () => {
+    toggleExpositoresForm(true);
+  });
+  document.getElementById("cancelar-expositores").addEventListener("click", () => {
+    toggleExpositoresForm(false);
+  });
+  document.getElementById("expositores-arquivo").addEventListener("change", (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      document.getElementById("expositores-texto").value = reader.result;
+    };
+    reader.readAsText(file, "UTF-8");
+  });
+  document.getElementById("carregar-expositores").addEventListener("click", () => {
+    const { parseExhibitorsCsv } = window.MotimApp;
+    const texto = document.getElementById("expositores-texto").value;
+    const { exhibitors, errors } = parseExhibitorsCsv(texto);
+    if (!exhibitors.length) {
+      alert(errors.length ? errors.join("\n") : "Nenhum expositor reconhecido nessa lista.");
+      return;
+    }
+    if (errors.length) {
+      alert(`Carregado com avisos:\n${errors.join("\n")}`);
+    }
+    customExhibitors = exhibitors;
+    saveCustomExhibitors(exhibitors);
+    renderExpositoresStatus();
+    toggleExpositoresForm(false);
     runAndRender();
   });
 
